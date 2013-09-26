@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:activiti="http://activiti.org/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" typeLanguage="http://www.w3.org/2001/XMLSchema" expressionLanguage="http://www.w3.org/1999/XPath" targetNamespace="http://www.activiti.org/test">
+
+  <signal id="launchCandidateSubprocess" name="launchCandidateSubprocess"/>
+  <process id="hiringProcess" name="Hiring process" isExecutable="true" activiti:candidateUsers="MANAGER" activiti:candidateStarterUsers="MANAGER">
+
+      <extensionElements>
+          <activiti:hiringProcess>
+              <resourceAssignmentExpression>
+                  <formalExpression>user(MANAGER)</formalExpression>
+              </resourceAssignmentExpression>
+          </activiti:hiringProcess>
+      </extensionElements>
+
+    <startEvent id="vacancyStartEvent" name="Create vacancy"></startEvent>
+    <sequenceFlow id="flow1" sourceRef="vacancyStartEvent" targetRef="saveVacancyAndAssign"></sequenceFlow>
+    <serviceTask id="saveVacancyAndAssign" name="Save vacancy and assign" activiti:class="name.krestjaninoff.activiti.hello.process.SaveVacancyAndAssignService"></serviceTask>
+    <sequenceFlow id="flow2" sourceRef="saveVacancyAndAssign" targetRef="findEmployees"></sequenceFlow>
+    <userTask id="findEmployees" name="Find employees" activiti:candidateGroups="hr"></userTask>
+      <boundaryEvent id="launchSubprocess" attachedToRef="findEmployees" cancelActivity="false">
+        <signalEventDefinition signalRef="launchCandidateSubprocess" />
+      </boundaryEvent>
+      <sequenceFlow id="flow3" sourceRef="launchSubprocess" targetRef="candidateSubProcess" />
+    <sequenceFlow id="flow4" sourceRef="findEmployees" targetRef="vacancyProcessEnd"></sequenceFlow>
+    <endEvent id="vacancyProcessEnd" name="Vacancy close"></endEvent>
+
+      <subProcess id="candidateSubProcess" activiti:async="true">
+          <extensionElements>
+              <activiti:executionListener class="org.bpmnwithactiviti.chapter6.listener.StartCandidateSubprocessListener" event="start"/>
+              <activiti:executionListener class="org.bpmnwithactiviti.chapter6.listener.EndCandidateSubprocessListener" event="end"/>
+          </extensionElements>
+          <startEvent id="candidateSubProcessStart" name="Start" activiti:async="true"></startEvent>
+          <sequenceFlow id="flow5" sourceRef="candidateSubProcessStart" targetRef="addCandidate"></sequenceFlow>
+          <serviceTask id="addCandidate" name="Add candidate" activiti:async="true" activiti:class="name.krestjaninoff.activiti.hello.process.AddCandidateService"></serviceTask>
+
+          <sequenceFlow id="flow6" sourceRef="addCandidate" targetRef="approveCandidate"></sequenceFlow>
+          <sequenceFlow id="flow6error" sourceRef="addCandidate" targetRef="candidateSubprocessEnd"></sequenceFlow>
+          <userTask id="approveCandidate" name="Employ employee"></userTask>
+          <sequenceFlow id="flow7" sourceRef="approveCandidate" targetRef="candidateSubprocessEnd"></sequenceFlow>
+          <endEvent id="candidateSubprocessEnd" name="End"></endEvent>
+      </subProcess>
+  </process>
+</definitions>
